@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ebayapi"
+version = "0.1.0"
+description = "A reusable eBay Trading API wrapper"
+authors = [
+    { name = "Your Name" }
+]
+license = { text = "Proprietary" }
+readme = "ebayapi/README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "ebaysdk",
+    "ebay_rest",
+    "pandas"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourname/ebayapi"
+
+[tool.setuptools.packages.find]
+where = ["ebayapi"]

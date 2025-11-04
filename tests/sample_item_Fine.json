@@ -1,0 +1,211 @@
+{
+  "AutoPay": "true",
+  "BuyerProtection": "ItemIneligible",
+  "BuyItNowPrice": {
+    "value": "0.0"
+  },
+  "Country": "US",
+  "Currency": "USD",
+  "ItemID": "388953359839",
+  "ListingDetails": {
+    "Adult": "false",
+    "BindingAuction": "false",
+    "CheckoutEnabled": "true",
+    "ConvertedBuyItNowPrice": {
+      "value": "0.0"
+    },
+    "ConvertedStartPrice": {
+      "value": "509.0"
+    },
+    "ConvertedReservePrice": {
+      "value": "0.0"
+    },
+    "HasReservePrice": "false",
+    "StartTime": "2025-09-11 02:18:35",
+    "EndTime": "2025-09-11 20:53:49",
+    "ViewItemURL": "https://www.ebay.com/itm/Good-Fast-Shipping-Sony-Cyber-Shot-DSC-RX100-iii-m3-/388953359839",
+    "HasUnansweredQuestions": "true",
+    "HasPublicMessages": "false",
+    "ViewItemURLForNaturalSearch": "https://www.ebay.com/itm/Good-Fast-Shipping-Sony-Cyber-Shot-DSC-RX100-iii-m3-/388953359839"
+  },
+  "ListingDuration": "GTC",
+  "ListingType": "FixedPriceItem",
+  "Location": "La Verne, California",
+  "PrimaryCategory": {
+    "CategoryID": "31388",
+    "CategoryName": "Cameras & Photo:Digital Cameras"
+  },
+  "PrivateListing": "false",
+  "Quantity": "1",
+  "IsItemEMSEligible": "false",
+  "ReservePrice": {
+    "value": "0.0"
+  },
+  "ReviseStatus": {
+    "ItemRevised": "false"
+  },
+  "SellingStatus": {
+    "BidCount": "0",
+    "BidIncrement": {
+      "value": "0.0"
+    },
+    "ConvertedCurrentPrice": {
+      "value": "509.0"
+    },
+    "CurrentPrice": {
+      "value": "509.0"
+    },
+    "HighBidder": {
+      "AboutMePage": "false",
+      "EIASToken": "nY+sHZ2PrBmdj6wVnY+sEZ2PrA2dj6MFlISjCpKEog6dj6x9nY+seQ==",
+      "Email": "20b5dfccd9e093420a10@members.ebay.com",
+      "FeedbackScore": "1",
+      "PositiveFeedbackPercent": "0.0",
+      "eBayGoodStanding": "true",
+      "NewUser": "false",
+      "RegistrationDate": "2020-05-11 19:56:00",
+      "Site": "US",
+      "UserID": "alessguar_25",
+      "VATStatus": "NoVATTax",
+      "BuyerInfo": {
+        "ShippingAddress": {
+          "Country": "US",
+          "PostalCode": "07045-8909"
+        }
+      },
+      "UserAnonymized": "false"
+    },
+    "MinimumToBid": {
+      "value": "509.0"
+    },
+    "QuantitySold": "1",
+    "ReserveMet": "true",
+    "SecondChanceEligible": "false",
+    "ListingStatus": "Completed"
+  },
+  "ShippingDetails": {
+    "ApplyShippingDiscount": "false",
+    "CalculatedShippingRate": {
+      "WeightMajor": {
+        "value": "0"
+      },
+      "WeightMinor": {
+        "value": "0"
+      }
+    },
+    "SalesTax": {
+      "SalesTaxPercent": "0.0",
+      "ShippingIncludedInTax": "false"
+    },
+    "ShippingServiceOptions": {
+      "ShippingService": "ShippingMethodStandard",
+      "ShippingServiceCost": {
+        "value": "0.0"
+      },
+      "ShippingServicePriority": "1",
+      "ExpeditedService": "false",
+      "ShippingTimeMin": "1",
+      "ShippingTimeMax": "5",
+      "FreeShipping": "true"
+    },
+    "ShippingType": "Flat",
+    "ThirdPartyCheckout": "false",
+    "ShippingDiscountProfileID": "0",
+    "InternationalShippingDiscountProfileID": "0",
+    "ExcludeShipToLocation": [
+      "US Protectorates",
+      "APO/FPO",
+      "Africa",
+      "Asia",
+      "Central America and Caribbean",
+      "Middle East",
+      "North America",
+      "Oceania",
+      "Southeast Asia",
+      "South America",
+      "RU"
+    ],
+    "SellerExcludeShipToLocationsPreference": "false"
+  },
+  "ShipToLocations": "US",
+  "Site": "US",
+  "StartPrice": {
+    "value": "509.0"
+  },
+  "Storefront": {
+    "StoreCategoryID": "23561808015",
+    "StoreCategory2ID": "0",
+    "StoreURL": "https://www.ebay.com.hk/str/farcamerastore"
+  },
+  "TimeLeft": "PT0S",
+  "Title": "[Good, Fast Shipping] Sony Cyber-Shot DSC-RX100 iii m3",
+  "WatchCount": "9",
+  "LocationDefaulted": "true",
+  "GetItFast": "false",
+  "BuyerResponsibleForShipping": "false",
+  "SKU": "2036789",
+  "PostalCode": "91750",
+  "PictureDetails": {
+    "GalleryType": "Gallery",
+    "PictureURL": [
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/zp0AAeSwH3RowjFY/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/890AAeSw5T5owjFU/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/kDcAAeSwxm1owjFU/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/9iUAAeSwR2JowjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/~YEAAeSw~7RowjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/jG4AAeSwu9VowjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/Fy8AAeSwavlowjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/8OgAAeSwH8howjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/41sAAeSwpApowjFY/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/95EAAeSwpGFowjFY/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/3Z8AAeSw2JpowjFX/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/UoAAAeSwbCZowjFY/$_57.JPG?set_id=880000500F",
+      "https://i.ebayimg.com/00/s/MTIwMFgxNjAw/z/GEIAAeSwcz5owjFX/$_57.JPG?set_id=880000500F"
+    ]
+  },
+  "DispatchTimeMax": "3",
+  "ProxyItem": "false",
+  "BuyerGuaranteePrice": {
+    "value": "20000.0"
+  },
+  "BuyerRequirementDetails": {
+    "ShipToRegistrationCountry": "true"
+  },
+  "ReturnPolicy": {
+    "ReturnsAcceptedOption": "ReturnsNotAccepted",
+    "ReturnsAccepted": "No returns accepted"
+  },
+  "ConditionID": "3000",
+  "ConditionDescription": "A Sony RX100 Mark 3 Camera. There are a few other minor scratches on the camera.",
+  "ConditionDisplayName": "Used",
+  "PostCheckoutExperienceEnabled": "false",
+  "SellerProfiles": {
+    "SellerShippingProfile": {
+      "ShippingProfileID": "241283767026",
+      "ShippingProfileName": "ShippingFromUS"
+    },
+    "SellerReturnProfile": {
+      "ReturnProfileID": "239692441026",
+      "ReturnProfileName": "NoReturn"
+    },
+    "SellerPaymentProfile": {
+      "PaymentProfileID": "239692416026",
+      "PaymentProfileName": "PayNow"
+    }
+  },
+  "ShippingPackageDetails": {
+    "ShippingIrregular": "false",
+    "ShippingPackage": "None",
+    "WeightMajor": {
+      "value": "0"
+    },
+    "WeightMinor": {
+      "value": "0"
+    }
+  },
+  "RelistParentID": "388950865576",
+  "HideFromSearch": "false",
+  "eBayPlus": "false",
+  "eBayPlusEligible": "false",
+  "IsSecureDescription": "true"
+}
