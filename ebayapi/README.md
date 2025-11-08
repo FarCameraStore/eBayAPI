@@ -9,6 +9,8 @@
 ```bash
 pip install .
 ```
+## TODO:
+- 充分测试添加Campaign Items功能
 
 ## 使用示例
 
