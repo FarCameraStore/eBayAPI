@@ -709,37 +709,196 @@ class EbayAPI:
             print(error_msg, file=sys.stderr)
             return {'success': False, 'error': str(e)}
 
+    def send_message_to_buyer(self, item_id: str, recipient_id: str, subject: str, 
+                             message_body: str, question_type: str = 'General',
+                             email_copy_to_sender: bool = False, 
+                             media_urls: list = None) -> dict:
+        """
+        向买家发送消息，使用 AddMemberMessageAAQToPartner API。
+        买卖双方可以在订单创建后 90 天内相互发送消息。
+        
+        参数:
+            item_id (str): 商品ID（必需）
+            recipient_id (str): 收件人的 eBay 用户ID（必需）
+            subject (str): 消息主题（必需）
+            message_body (str): 消息正文内容，不支持HTML格式（必需，最大2000字符）
+            question_type (str, optional): 问题类型，可选值：
+                - 'General': 一般问题（默认）
+                - 'Shipping': 运输相关问题
+                - 'Payment': 付款相关问题
+            email_copy_to_sender (bool, optional): 是否发送邮件副本给发送者，默认 False
+            media_urls (list, optional): 图片URL列表，必须是已上传到eBay图片服务(EPS)的URL
+                格式: [{'url': 'https://...', 'name': '图片名称'}, ...]
+        
+        返回:
+            dict: 包含成功状态、错误信息等的结果字典
+                {
+                    'success': bool,  # 是否成功
+                    'response': dict,  # API响应内容
+                    'error': str  # 错误信息（如果有）
+                }
+        
+        注意:
+            - 消息正文不支持HTML格式，如果使用HTML标签会导致错误或显示原始标签
+            - 调用者必须是该商品的买家或卖家
+            - 此API有速率限制：每个用户ID在60秒内最多调用75次
+            - 图片必须先上传到eBay图片服务(EPS)才能在消息中使用
+            
+        示例:
+            # 基本用法 - 卖家向买家发送感谢消息
+            result = api.send_message_to_buyer(
+                item_id='123456789012',
+                recipient_id='buyer_username',
+                subject='Thank you for your purchase',
+                message_body='We appreciate your business and hope you enjoy your item.'
+            )
+            
+            # 带图片的消息
+            result = api.send_message_to_buyer(
+                item_id='123456789012',
+                recipient_id='buyer_username',
+                subject='Product details',
+                message_body='Here are some additional photos of the item.',
+                question_type='General',
+                media_urls=[
+                    {'url': 'https://i.ebayimg.com/...', 'name': 'detail1.jpg'},
+                    {'url': 'https://i.ebayimg.com/...', 'name': 'detail2.jpg'}
+                ]
+            )
+        """
+        if not self.api_trading:
+            print("Trading API 客户端未初始化。", file=sys.stderr)
+            return {'success': False, 'error': 'Trading API client not initialized'}
+        
+        # 验证必需参数
+        if not item_id or not recipient_id or not subject or not message_body:
+            return {
+                'success': False,
+                'error': '缺少必需参数：item_id, recipient_id, subject 和 message_body 都是必需的'
+            }
+        
+        # 验证消息长度
+        if len(message_body) > 2000:
+            return {
+                'success': False,
+                'error': f'消息正文过长（{len(message_body)}字符），最大允许2000字符'
+            }
+        
+        # 验证问题类型
+        valid_question_types = ['General', 'Shipping', 'Payment']
+        if question_type not in valid_question_types:
+            return {
+                'success': False,
+                'error': f'无效的问题类型: {question_type}，有效值为: {", ".join(valid_question_types)}'
+            }
+        
+        try:
+            # 构建 MemberMessage 容器
+            member_message = {
+                'Subject': subject,
+                'Body': message_body,
+                'QuestionType': question_type,
+                'RecipientID': recipient_id
+            }
+            
+            # 添加可选的邮件副本设置
+            if email_copy_to_sender:
+                member_message['EmailCopyToSender'] = True
+            
+            # 添加图片媒体（如果提供）
+            if media_urls and isinstance(media_urls, list) and len(media_urls) > 0:
+                message_media_list = []
+                for media in media_urls:
+                    if isinstance(media, dict) and 'url' in media:
+                        media_item = {'MediaURL': media['url']}
+                        if 'name' in media and media['name']:
+                            # 限制名称长度为100字符
+                            media_name = media['name'][:100] if len(media['name']) > 100 else media['name']
+                            media_item['MediaName'] = media_name
+                        message_media_list.append(media_item)
+                
+                if message_media_list:
+                    member_message['MessageMedia'] = message_media_list
+            
+            # 构建完整请求数据
+            request_data = {
+                'ItemID': item_id,
+                'MemberMessage': member_message
+            }
+            
+            print(f"正在发送消息给买家...")
+            print(f"  商品ID: {item_id}")
+            print(f"  收件人: {recipient_id}")
+            print(f"  主题: {subject}")
+            print(f"  问题类型: {question_type}")
+            if media_urls:
+                print(f"  附带图片: {len(media_urls)} 张")
+            
+            # 调用 eBay AddMemberMessageAAQToPartner API
+            response = self.api_trading.execute('AddMemberMessageAAQToPartner', request_data)
+            
+            # 将响应转换为字典
+            response_dict = self.to_dict_recursive(response.reply)
+            
+            # 检查响应状态
+            if response.reply.Ack in ['Success', 'Warning']:
+                print("✅ 消息发送成功")
+                result = {
+                    'success': True,
+                    'response': response_dict
+                }
+                
+                # 如果有警告，添加到结果中
+                if response.reply.Ack == 'Warning' and hasattr(response.reply, 'Errors'):
+                    warnings = []
+                    for error in response.reply.Errors:
+                        warnings.append({
+                            'code': getattr(error, 'ErrorCode', ''),
+                            'message': getattr(error, 'LongMessage', '')
+                        })
+                    result['warnings'] = warnings
+                    print(f"⚠️ 警告: {warnings}")
+                
+                return result
+            else:
+                # 处理失败情况
+                error_msg = '未知错误'
+                if hasattr(response.reply, 'Errors') and response.reply.Errors:
+                    error = response.reply.Errors[0]
+                    error_msg = getattr(error, 'LongMessage', getattr(error, 'ShortMessage', '未知错误'))
+                
+                print(f"❌ 消息发送失败: {error_msg}", file=sys.stderr)
+                return {
+                    'success': False,
+                    'error': error_msg,
+                    'response': response_dict
+                }
+                
+        except ConnectionError as e:
+            error_msg = f"API 连接或请求出错: {e.response.text if e.response else e}"
+            print(error_msg, file=sys.stderr)
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            error_msg = f"发送消息时发生未知错误: {e}"
+            print(error_msg, file=sys.stderr)
+            return {'success': False, 'error': str(e)}
+
     # ==================== Marketing API (Promoted Listings) ====================
     
     def get_all_campaigns(self, campaign_status: str = None, campaign_name: str = None, 
                          funding_strategy: str = None, limit: int = 100, offset: int = 0) -> dict:
         """
-        获取所有的推广活动（Campaigns）。
+        获取推广活动列表。
         
         参数:
-            campaign_status (str, optional): 活动状态筛选，可选值：
-                - RUNNING: 正在运行的活动
-                - PAUSED: 已暂停的活动
-                - ENDED: 已结束的活动
-                - DRAFT: 草稿状态的活动
-            campaign_name (str, optional): 按活动名称筛选
-            funding_strategy (str, optional): 资金策略筛选，可选值：
-                - COST_PER_SALE (CPS): 按销售额付费
-                - COST_PER_CLICK (CPC): 按点击付费
-            limit (int, optional): 每页返回的最大活动数量，默认100，最大500
-            offset (int, optional): 分页偏移量，默认0
+            campaign_status: 状态筛选 (RUNNING/PAUSED/ENDED/DRAFT)
+            campaign_name: 活动名称筛选
+            funding_strategy: 资金策略 (COST_PER_SALE/COST_PER_CLICK)
+            limit: 每页数量，默认100，最大500
+            offset: 分页偏移量，默认0
             
         返回:
-            dict: 包含活动列表和分页信息的字典，格式如下：
-                {
-                    'campaigns': [list of campaign objects],
-                    'total': int,  # 总活动数
-                    'limit': int,  # 每页数量
-                    'offset': int,  # 当前偏移量
-                    'href': str,  # 当前页URI
-                    'next': str,  # 下一页URI（如果有）
-                    'prev': str   # 上一页URI（如果有）
-                }
+            dict: {'campaigns': [...], 'total': int, 'limit': int, 'offset': int, 'href': str}
         """
         if not self.api_rest:
             print("REST API 客户端未初始化，无法查询推广活动。", file=sys.stderr)
@@ -747,19 +906,6 @@ class EbayAPI:
         
         try:
             # 构建查询参数
-            params = {
-                'limit': min(limit, 500),  # 确保不超过最大值
-                'offset': offset
-            }
-            
-            # 添加可选参数
-            if campaign_status:
-                params['campaign_status'] = campaign_status
-            if campaign_name:
-                params['campaign_name'] = campaign_name
-            if funding_strategy:
-                params['funding_strategy'] = funding_strategy
-            
             print(f"正在获取推广活动列表...")
             if campaign_status:
                 print(f"  筛选条件 - 状态: {campaign_status}")
@@ -768,34 +914,42 @@ class EbayAPI:
             if funding_strategy:
                 print(f"  筛选条件 - 资金策略: {funding_strategy}")
             
-            # 调用 Marketing API 的 getCampaigns 方法
-            kwargs = {
-                'limit': params['limit']  # 传递整数而不是字符串
-            }
-            
-            # 只添加非空的可选参数
-            if params.get('campaign_status'):
-                kwargs['campaign_status'] = params['campaign_status']
-            if params.get('campaign_name'):
-                kwargs['campaign_name'] = params['campaign_name']
-            if params.get('funding_strategy'):
-                kwargs['funding_strategy'] = params['funding_strategy']
+            kwargs = {'limit': min(limit, 500)}
+            if campaign_status:
+                kwargs['campaign_status'] = campaign_status
+            if campaign_name:
+                kwargs['campaign_name'] = campaign_name
+            if funding_strategy:
+                kwargs['funding_strategy'] = funding_strategy
             
             response_gen = self.api_rest.sell_marketing_get_campaigns(**kwargs)
             
-            # 收集所有结果（生成器会自动处理分页）
+            # 收集所有结果（ebay_rest 生成器会将每个 campaign 拆分为单独的记录）
             all_campaigns = []
             total = 0
             href = ''
             
             for page_response in response_gen:
-                campaigns = page_response.get('campaigns', [])
-                all_campaigns.extend(campaigns)
-                total = page_response.get('total', 0)
+                # ebay_rest 生成器格式：{'record': {...}} 或 {'total': {...}}
+                if 'record' in page_response:
+                    # 单个 campaign 记录
+                    all_campaigns.append(page_response['record'])
+                elif 'campaigns' in page_response:
+                    # 标准 campaigns 数组格式
+                    all_campaigns.extend(page_response.get('campaigns', []))
+                
+                # 提取 total 字段（可能是 int 或包含 records_available 的 dict）
+                total_field = page_response.get('total', 0)
+                if total_field:
+                    if isinstance(total_field, dict):
+                        total = total_field.get('records_available', 0)
+                    else:
+                        total = total_field
+                    
                 href = page_response.get('href', '')
                 
-                # 如果用户指定了 offset 和 limit，只获取需要的部分
-                if offset > 0 or len(all_campaigns) >= (offset + limit):
+                # 如果已收集足够记录，停止
+                if len(all_campaigns) >= (offset + limit):
                     break
             
             # 应用分页
@@ -803,16 +957,30 @@ class EbayAPI:
             end_idx = offset + limit
             paginated_campaigns = all_campaigns[start_idx:end_idx]
             
-            # 将响应转换为字典
+            # 将 snake_case 字段名转换为 camelCase（与 API 文档一致）
+            def snake_to_camel(snake_str):
+                components = snake_str.split('_')
+                return components[0] + ''.join(x.capitalize() for x in components[1:])
+            
+            def normalize_keys(obj):
+                if isinstance(obj, dict):
+                    return {snake_to_camel(k): normalize_keys(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [normalize_keys(item) for item in obj]
+                else:
+                    return obj
+            
+            normalized_campaigns = [normalize_keys(campaign) for campaign in paginated_campaigns]
+            
             result = {
-                'campaigns': paginated_campaigns,
+                'campaigns': normalized_campaigns,
                 'total': total,
                 'limit': limit,
                 'offset': offset,
                 'href': href
             }
             
-            print(f"成功获取 {len(paginated_campaigns)} 个推广活动（共 {total} 个）")
+            print(f"成功获取 {len(normalized_campaigns)} 个推广活动（共 {total} 个）")
             
             return result
             
@@ -825,44 +993,28 @@ class EbayAPI:
             print(error_msg, file=sys.stderr)
             return {'campaigns': [], 'total': 0, 'error': str(e)}
 
-    def add_items_to_campaign(self, campaign_id: str, items: list) -> dict:
+    def add_items_to_campaign(self, campaign_id: str, items: list, use_listing_id: bool = True) -> dict:
         """
-        为指定的推广活动批量添加商品。
+        为推广活动批量添加商品。
         
         参数:
-            campaign_id (str): 活动ID，使用 get_all_campaigns() 获取
-            items (list): 要添加的商品列表，每个商品是一个字典，包含以下字段：
-                - inventory_reference_id (str): 商品ID或SKU
-                - inventory_reference_type (str): 商品类型，可选值：
-                    * 'INVENTORY_ITEM': 单一商品（使用item ID或SKU）
-                    * 'INVENTORY_ITEM_GROUP': 多变体商品（使用inventoryItemGroupKey）
-                - bid_percentage (str, optional): 广告费率（仅CPS模式需要），如 "10.0" 表示10%
-                - ad_group_id (str, optional): 广告组ID（仅CPC模式需要）
-        
-        示例:
-            items = [
-                {
-                    'inventory_reference_id': '123456789012',
-                    'inventory_reference_type': 'INVENTORY_ITEM',
-                    'bid_percentage': '10.0'
-                },
-                {
-                    'inventory_reference_id': 'SKU-ABC-123',
-                    'inventory_reference_type': 'INVENTORY_ITEM',
-                    'bid_percentage': '12.5'
-                }
-            ]
-            result = api.add_items_to_campaign('1234567890', items)
+            campaign_id: 活动ID
+            items: 商品列表，每个包含：
+                若 use_listing_id=True (Trading API 商品):
+                  - listing_id: 商品ID (ItemID)
+                  - bid_percentage: 广告费率（CPS模式）
+                  - ad_group_id: 广告组ID（CPC模式）
+                若 use_listing_id=False (Inventory API 商品):
+                  - inventory_reference_id: 商品ID或SKU
+                  - inventory_reference_type: INVENTORY_ITEM / INVENTORY_ITEM_GROUP
+                  - bid_percentage: 广告费率（CPS模式）
+                  - ad_group_id: 广告组ID（CPC模式）
+            use_listing_id: True=使用 bulkCreateAdsByListingId (Trading API)，
+                           False=使用 bulkCreateAdsByInventoryReference (Inventory API)
         
         返回:
-            dict: 包含操作结果的字典，格式如下：
-                {
-                    'success': bool,  # 是否全部成功
-                    'responses': [list of response objects],  # 每个商品的添加结果
-                    'total_requested': int,  # 请求添加的商品数
-                    'total_succeeded': int,  # 成功添加的商品数
-                    'total_failed': int  # 失败的商品数
-                }
+            dict: {'success': bool, 'responses': [...], 'total_requested': int, 
+                   'total_succeeded': int, 'total_failed': int}
         """
         if not self.api_rest:
             print("REST API 客户端未初始化，无法添加商品到推广活动。", file=sys.stderr)
@@ -874,38 +1026,62 @@ class EbayAPI:
         try:
             # 构建请求数据
             requests = []
-            for item in items:
-                request_item = {
-                    'inventoryReferenceId': item.get('inventory_reference_id'),
-                    'inventoryReferenceType': item.get('inventory_reference_type', 'INVENTORY_ITEM')
-                }
+            
+            if use_listing_id:
+                # Trading API: 使用 listingId
+                for item in items:
+                    request_item = {
+                        'listingId': item.get('listing_id')
+                    }
+                    if 'bid_percentage' in item:
+                        request_item['bidPercentage'] = str(item['bid_percentage'])
+                    if 'ad_group_id' in item:
+                        request_item['adGroupId'] = item['ad_group_id']
+                    requests.append(request_item)
                 
-                # 添加可选字段
-                if 'bid_percentage' in item:
-                    request_item['bidPercentage'] = str(item['bid_percentage'])
-                if 'ad_group_id' in item:
-                    request_item['adGroupId'] = item['ad_group_id']
+                print(f"正在为活动 {campaign_id} 批量添加 {len(items)} 个商品 (Trading API)...")
                 
-                requests.append(request_item)
+                response = self.api_rest.sell_marketing_bulk_create_ads_by_listing_id(
+                    campaign_id=campaign_id,
+                    content_type='application/json',
+                    body={'requests': requests}
+                )
+            else:
+                # Inventory API: 使用 inventoryReferenceId
+                for item in items:
+                    request_item = {
+                        'inventoryReferenceId': item.get('inventory_reference_id'),
+                        'inventoryReferenceType': item.get('inventory_reference_type', 'INVENTORY_ITEM')
+                    }
+                    if 'bid_percentage' in item:
+                        request_item['bidPercentage'] = str(item['bid_percentage'])
+                    if 'ad_group_id' in item:
+                        request_item['adGroupId'] = item['ad_group_id']
+                    requests.append(request_item)
+                
+                print(f"正在为活动 {campaign_id} 批量添加 {len(items)} 个商品 (Inventory API)...")
+                
+                response = self.api_rest.sell_marketing_bulk_create_ads_by_inventory_reference(
+                    campaign_id=campaign_id,
+                    content_type='application/json',
+                    body={'requests': requests}
+                )
             
-            request_body = {'requests': requests}
-            
-            print(f"正在为活动 {campaign_id} 批量添加 {len(items)} 个商品...")
-            
-            # 调用 Marketing API 的 bulkCreateAdsByInventoryReference 方法
-            # 注意：ebay_rest API 返回的是生成器，需要转换
-            response_gen = self.api_rest.sell_marketing_bulk_create_ads_by_inventory_reference(
-                campaign_id=campaign_id,
-                body=request_body
-            )
-            
-            # 将生成器转换为字典（生成器会yield单个响应对象）
-            response = next(response_gen, {})
+            # 检查是否是生成器还是直接返回的字典
+            if hasattr(response, '__iter__') and not isinstance(response, (dict, str)):
+                response = next(response, {})
+            elif isinstance(response, dict):
+                # 直接返回的字典
+                pass
+            else:
+                response = {}
             
             # 统计结果
             responses = response.get('responses', [])
             total_requested = len(items)
-            total_succeeded = sum(1 for r in responses if r.get('statusCode') == 201)
+            # API 返回的字段是 snake_case: status_code 或 statusCode
+            total_succeeded = sum(1 for r in responses 
+                                if r.get('statusCode') in [200, 201] or r.get('status_code') in [200, 201])
             total_failed = total_requested - total_succeeded
             
             result = {
@@ -922,12 +1098,15 @@ class EbayAPI:
             if total_failed > 0:
                 print("\n失败的商品详情:")
                 for resp in responses:
-                    if resp.get('statusCode') != 201:
-                        inv_id = resp.get('inventoryReferenceId', 'Unknown')
+                    status = resp.get('statusCode') or resp.get('status_code')
+                    if status not in [200, 201]:
+                        # 兼容两种API格式和命名风格
+                        item_id = (resp.get('listingId') or resp.get('listing_id') or 
+                                 resp.get('inventoryReferenceId') or resp.get('inventory_reference_id') or 'Unknown')
                         errors = resp.get('errors', [])
                         if errors:
                             error_msg = errors[0].get('message', 'Unknown error')
-                            print(f"  - {inv_id}: {error_msg}")
+                            print(f"  - {item_id}: {error_msg}")
             
             return result
             
@@ -939,6 +1118,118 @@ class EbayAPI:
             error_msg = f"添加商品到推广活动时发生未知错误: {e}"
             print(error_msg, file=sys.stderr)
             return {'success': False, 'error': str(e)}
+
+    def get_campaign_ads(self, campaign_id: str, limit: int = 500, debug: bool = False) -> dict:
+        """
+        获取推广活动中的所有广告（商品）。
+        
+        参数:
+            campaign_id: 活动ID
+            limit: 每页数量，默认500
+            debug: 是否启用调试输出
+            
+        返回:
+            dict: {'ads': [...], 'total': int, 'inventory_ids': set, 'listing_ids': set}
+        """
+        if not self.api_rest:
+            print("REST API 客户端未初始化。", file=sys.stderr)
+            return {'ads': [], 'total': 0, 'inventory_ids': set(), 'listing_ids': set()}
+        
+        try:
+            response_gen = self.api_rest.sell_marketing_get_ads(
+                campaign_id=campaign_id,
+                limit=limit
+            )
+            
+            all_ads = []
+            inventory_ids = set()
+            listing_ids = set()
+            total = 0
+            page_count = 0
+            
+            for page_response in response_gen:
+                page_count += 1
+                
+                if debug:
+                    print(f"\n[DEBUG] getAds 第 {page_count} 页")
+                    print(f"[DEBUG] 响应键: {list(page_response.keys())}")
+                    for key, value in page_response.items():
+                        value_str = str(value)
+                        if len(value_str) > 100:
+                            value_str = value_str[:100] + '...'
+                        print(f"[DEBUG]   - {key}: {type(value).__name__} = {value_str}")
+                
+                # ebay_rest 生成器格式：{'record': {...}} 或 {'ads': [...]} 或 {'total': {...}}
+                if 'record' in page_response:
+                    # 单个 ad 记录
+                    ad = page_response['record']
+                    all_ads.append(ad)
+                    
+                    # 提取 inventory reference ID（snake_case 或 camelCase）
+                    inv_ref_id = ad.get('inventory_reference_id') or ad.get('inventoryReferenceId')
+                    listing_id = ad.get('listing_id') or ad.get('listingId')
+                    
+                    # 确保 ID 是字符串格式
+                    if inv_ref_id:
+                        inventory_ids.add(str(inv_ref_id))
+                    if listing_id:
+                        listing_ids.add(str(listing_id))
+                    
+                    if debug:
+                        print(f"[DEBUG] 找到 ad: listing_id={listing_id}, inv_ref_id={inv_ref_id}")
+                        
+                elif 'ads' in page_response:
+                    # 标准 ads 数组格式
+                    ads = page_response.get('ads', [])
+                    all_ads.extend(ads)
+                    
+                    for ad in ads:
+                        inv_ref_id = ad.get('inventory_reference_id') or ad.get('inventoryReferenceId')
+                        listing_id = ad.get('listing_id') or ad.get('listingId')
+                        
+                        # 确保 ID 是字符串格式
+                        if inv_ref_id:
+                            inventory_ids.add(str(inv_ref_id))
+                        if listing_id:
+                            listing_ids.add(str(listing_id))
+                    
+                    if debug:
+                        print(f"[DEBUG] 找到 {len(ads)} 个 ads")
+                
+                # 提取 total 字段
+                total_field = page_response.get('total', 0)
+                if total_field:
+                    if isinstance(total_field, dict):
+                        total = total_field.get('records_available', 0)
+                    else:
+                        total = total_field
+                    
+                    if debug:
+                        print(f"[DEBUG] total = {total}")
+            
+            if debug:
+                print(f"\n[DEBUG] 总结:")
+                print(f"[DEBUG]   - 处理了 {page_count} 页")
+                print(f"[DEBUG]   - 收集到 {len(all_ads)} 个 ads")
+                print(f"[DEBUG]   - inventory_ids: {len(inventory_ids)} 个")
+                print(f"[DEBUG]   - listing_ids: {len(listing_ids)} 个")
+                print(f"[DEBUG]   - API 报告 total: {total}")
+            
+            return {
+                'ads': all_ads,
+                'total': total if total > 0 else len(all_ads),
+                'inventory_ids': inventory_ids,
+                'listing_ids': listing_ids
+            }
+            
+        except Error as e:
+            print(f"获取推广活动商品失败: {e}", file=sys.stderr)
+            return {'ads': [], 'total': 0, 'inventory_ids': set(), 'listing_ids': set(), 'error': str(e)}
+        except Exception as e:
+            print(f"获取推广活动商品时发生未知错误: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
+            return {'ads': [], 'total': 0, 'inventory_ids': set(), 'listing_ids': set(), 'error': str(e)}
 
     @staticmethod
     def to_dict_recursive(obj) -> any:
